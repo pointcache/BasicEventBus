@@ -7,12 +7,12 @@
 [Oo]bj/
 [Bb]uilds
 [Bb]uild
-ursa_log.txt
 /[Ll]ibrary/
 /Screenshots/
+/Assets/ShaderForge
+/ProjectSettings/
+/Packages/
 sysinfo.txt
-**/ShaderForge/
-Assets/Plugins/ShaderForge/
  
 # ===================================== #
 # Visual Studio / MonoDevelop generated #
@@ -26,6 +26,7 @@ Assets/Plugins/ShaderForge/
 *.user
 *.unityproj
 *.booproj
+*.tmp
 SyntaxTree.VisualStudio.Unity.Bridge.dll
 SyntaxTree.VisualStudio.Unity.Messaging.dll
 UnityVS.VersionSpecific.dll
@@ -47,3 +48,5 @@ ehthumbs.db
 
 
 
+.vs/
+Exchange/

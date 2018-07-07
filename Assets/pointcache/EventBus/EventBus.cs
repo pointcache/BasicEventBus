@@ -1,105 +1,107 @@
-﻿namespace pointcache.EventBus {
-    using UnityEngine;
+﻿namespace pointcache.EventBus
+{
+
     using System;
+    using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
 
-    /// <summary>
-    /// An abstract base class for creating events - derive from it to create your own game events to use
-    /// in the generic event system, EventManager.
-    /// </summary>
-    public abstract class GameEvent {
+    public static class EventBus
+    {
+        private static Dictionary<Type, ClassMap> class_register_map = new Dictionary<Type, ClassMap>();
+        private static Dictionary<Type, Action<IEvent>> cached_raise = new Dictionary<Type, Action<IEvent>>();
 
-        /// <summary>
-        /// Restore event to its default state
-        /// </summary>
-        public virtual void Reset() { }
-        public virtual void Raise() { }
-    }
-
-    public static class EventBus<T> where T : GameEvent, new() {
-
-        private const int INITIALPOOLCAPACITY = 32;
-
-        private static event Action<T> SubscribersWithArgs;
-        private static event Action Subscribers;
-
-        private static List<T> m_pool = new List<T>(INITIALPOOLCAPACITY);
-        private static List<T> m_inuse = new List<T>(INITIALPOOLCAPACITY);
-
-
-        public static T Next
+        private class BusMap
         {
+            public Action<IEventReceiverBase> register;
+            public Action<IEventReceiverBase> unregister;
+        }
 
-            get {
-                if (m_pool.Count == 0) {
-                    AddMoreEventsToPool();
+        private class ClassMap
+        {
+            public BusMap[] buses;
+        }
+
+        static EventBus()
+        {
+            var types = Assembly.GetExecutingAssembly().GetTypes();
+
+            Dictionary<Type, BusMap> bus_register_map = new Dictionary<Type, BusMap>();
+
+            Type delegateType = typeof(Action<>);
+            Type delegategenericregister = delegateType.MakeGenericType(typeof(IEventReceiverBase));
+
+            foreach (var t in types)
+            {
+                if (t != typeof(IEvent) && typeof(IEvent).IsAssignableFrom(t))
+                {
+                    Type eventhubtype = typeof(EventBus<>);
+                    Type genMyClass = eventhubtype.MakeGenericType(t);
+                    System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(genMyClass.TypeHandle);
+
+                    BusMap busmap = new BusMap()
+                    {
+                        register = Delegate.CreateDelegate(delegategenericregister, genMyClass.GetMethod("Register")) as Action<IEventReceiverBase>,
+                        unregister = Delegate.CreateDelegate(delegategenericregister, genMyClass.GetMethod("UnRegister")) as Action<IEventReceiverBase>
+                    };
+
+                    bus_register_map.Add(t, busmap);
+
+                    Type delegategenericraise = delegateType.MakeGenericType(t);
+                    cached_raise.Add(t, Delegate.CreateDelegate(delegategenericraise, genMyClass.GetMethod("Raise")) as Action<IEvent>);
                 }
-
-                T ev = m_pool[0];
-                m_pool.RemoveAt(0);
-                m_inuse.Add(ev);
-                ev.Reset();
-                return ev;
             }
 
-        }
+            foreach (var t in types)
+            {
+                if (typeof(IEventReceiverBase).IsAssignableFrom(t))
+                {
+                    Type[] interfaces = t.GetInterfaces().Where(x => x != typeof(IEventReceiverBase) && typeof(IEventReceiverBase).IsAssignableFrom(x)).ToArray();
 
-        static EventBus() {
+                    ClassMap map = new ClassMap()
+                    {
+                        buses = new BusMap[interfaces.Length]
+                    };
 
-            EventBusHelper.OnReset += Reset;
+                    for (int i = 0; i < interfaces.Length; i++)
+                    {
+                        var arg = interfaces[i].GetGenericArguments()[0];
+                        map.buses[i] = bus_register_map[arg];
+                    }
 
-        }
-
-        public static void Subscribe(Action<T> handler) {
-            SubscribersWithArgs += handler;
-        }
-
-        public static void UnSubscribe(Action<T> handler) {
-            SubscribersWithArgs -= handler;
-        }
-
-        public static void Subscribe(Action handler) {
-            Subscribers += handler;
-        }
-
-        public static void UnSubscribe(Action handler) {
-            Subscribers -= handler;
-        }
-
-        public static void Raise(T e) {
-
-            if (SubscribersWithArgs != null) {
-                SubscribersWithArgs(e);
-
-
-            }
-
-            if (Subscribers != null) {
-                Subscribers();
-            }
-
-            if (e != null) {
-                m_inuse.Remove(e);
-                m_pool.Add(e);
+                    class_register_map.Add(t, map);
+                }
             }
         }
 
-        public static void Clear() {
-            Subscribers = null;
-            SubscribersWithArgs = null;
-        }
+        public static void Register(IEventReceiverBase target)
+        {
+            Type t = target.GetType();
+            ClassMap map = class_register_map[t];
 
-        private static void Reset() {
-            m_pool.AddRange(m_inuse);
-            m_inuse.Clear();
-        }
-
-        private static void AddMoreEventsToPool() {
-
-            for (int i = 0; i < INITIALPOOLCAPACITY; i++) {
-                m_pool.Add(new T());
+            foreach (var busmap in map.buses)
+            {
+                busmap.register(target);
             }
-
         }
+
+        public static void UnRegister(IEventReceiverBase target)
+        {
+            Type t = target.GetType();
+            ClassMap map = class_register_map[t];
+
+            foreach (var busmap in map.buses)
+            {
+                busmap.unregister(target);
+            }
+        }
+
+        public static void Raise(IEvent ev)
+        {
+            cached_raise[ev.GetType()](ev);
+        }
+
     }
+
 }
