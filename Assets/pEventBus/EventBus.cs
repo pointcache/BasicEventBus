@@ -34,6 +34,7 @@
 
             Type delegateType = typeof(Action<>);
             Type delegategenericregister = delegateType.MakeGenericType(typeof(IEventReceiverBase));
+            Type delegategenericraise = delegateType.MakeGenericType(typeof(IEvent));
 
             var types = Assembly.GetExecutingAssembly().GetTypes();
 
@@ -53,8 +54,8 @@
 
                     bus_register_map.Add(t, busmap);
 
-                    Type delegategenericraise = delegateType.MakeGenericType(t);
-                    cached_raise.Add(t, Delegate.CreateDelegate(delegategenericraise, genMyClass.GetMethod("Raise")) as Action<IEvent>);
+                    var method = genMyClass.GetMethod("RaiseAsInterface");
+                    cached_raise.Add(t, (Action<IEvent>)Delegate.CreateDelegate(delegategenericraise, method));
                 }
             }
 

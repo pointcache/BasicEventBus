@@ -54,6 +54,11 @@
             }
         }
 
+        public static void RaiseAsInterface(IEvent e)
+        {
+            Raise((T)e);
+        }
+
         public static void Clear()
         {
             hash.Clear();
