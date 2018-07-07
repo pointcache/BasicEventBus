@@ -8,7 +8,7 @@ Basic event bus for unity
 
  # Create an event
  
- Create new struct, assing `IEvent` interface
+ Create new struct, assign `IEvent` interface
  
  ```csharp
  
