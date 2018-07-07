@@ -1,123 +1,82 @@
 # BasicEventBus
 Basic event bus for unity
 
- * Has a pool of event objects, that get cleaned up at the end of the frame
- * Raise with and without arguments
- * Subscribe methods with and without parameters
+ * Structs for events - no garbage
+ * Interface based subscription
+ * High performance (1mil events risen per frame at 60 fps on my machine)
 
-# Installation
-
- 1. Drop files into project
- 2. Drop `EventBusHelper` into the scene
- 3. In Script Execution Order make sure EventBus is before everything else that uses events.
+ # Create an event
  
- # Usage
- 
- ### Create an event
- 
- Events are defined as classes derived from GameEvent.
- Add any data you want it to carry, and implement Reset and Raise;
- 
- **Reset()** will be called before event is given to you by the pool
- **Raise()** is a convenience method that you yourself call, read below
+ Create new struct, assign `IEvent` interface
  
  ```csharp
  
-     public class StartBuildingRequest : GameEvent {
+public struct TestEvent : IEvent
+{
+    public string a;
+    public float b;
 
-        public string Tag;
-
-        public override void Reset() {
-            Tag = "";
-        }
-
-        public override void Raise() {
-            EventBus<StartBuildingRequest>.Raise(this);
-        }
-    }
+}
 
 
 ```
 
-### Raising an event
-##### With arguments
+# Raising an event
 
-1. Use `EventBus<T>.Next` to get an event object instance from the pool.
-2. Set your event data
-3. Call `Raise()` on it.
+Slower method (has to do lookup to resolve subscribers)
 
+```cs
 
-```csharp
-
-    var ev = EventBus<OnChangeRallyPoint>.Next;
-    ev.position = mouseclickpos;
-    ev.Raise();
-    
-
-```
-    
-Alternatively you can raise it with
-
-
-```csharp
-
-
-EventBus<OnChangeRallyPoint>.Raise(ev);
-
-
+EventBus.Raise(new TestEvent()
+{
+    b = 7,
+    a = "Hello"
+});
+                
 ```
 
-but who likes typing?
+Fast method (directly invoke raise on the generic bus)
 
-##### Without arguments
+```cs
 
-Simply raise it with null.
+EventBus<TestEvent>.Raise(new TestEvent()
+{
+    b = 7,
+    a = "Hello"
+});
+                
+```
 
-```csharp
+# Subscribing
 
-EventBus<OnChangeRallyPoint>.Raise(null);
+1. Implement desired interfaces on a class
+
+```cs
+
+
+public class EventBusTest : MonoBehaviour,
+    IEventReceiver<TestEvent>,
+    IEventReceiver<OnResourceDrop>
+{
+
 
 ```
 
-### Observing
+2. Feed instance of it to `EventBus.Register()`
 
-You can subscribe both methods with a GameEvent as argument and without
+```cs
 
-##### With argument
-
-```csharp
-
-void Awake() {
-        EventBus<OnDeath>.Subscribe(OnDeath);
+    void Start()
+    {
+        EventBus.Register(this);
     }
 
-    void OnDeath(OnDeath ev) {
-        if (ev.dead.tag == GameConstants.PLAYER)
-            GameOver();
+    private void OnDestroy()
+    {
+        EventBus.UnRegister(this);
     }
-    
+
 ```
 
+It will automatically subscribe everything, reflection is used only once on application start, after that everything is cached and mapped.
 
-##### Without argument
-
-```csharp
-
-
-   private void Awake() {
-        EventBus<OnGameOver>.Subscribe(OnGameOver);
-    }
-
-    private void OnDisable() {
-        EventBus<OnGameOver>.UnSubscribe(OnGameOver);
-    }
-
-    void OnGameOver() {
-        panel.gameObject.SetActive(true);
-    }
-    
-    
-```
-
-
-# Dont forget to unsubscribe your methods! Don't be lazy and leave bugs in.
