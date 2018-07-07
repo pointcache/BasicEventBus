@@ -40,7 +40,7 @@ Fast method (directly invoke raise on the generic bus)
 
 ```cs
 
-EventBus.Raise(new TestEvent()
+EventBus<TestEvent>.Raise(new TestEvent()
 {
     b = 7,
     a = "Hello"
