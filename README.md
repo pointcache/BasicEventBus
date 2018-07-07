@@ -5,10 +5,6 @@ Basic event bus for unity
  * Interface based subscription
  * High performance (1mil events risen per frame at 60 fps on my machine)
 
-# asmdef
-To properly use it with asmdef you have to keep all your declared event types in the same folder as event bus,
-then all other assemblies can refer to it, but not to each other.
-
  # Create an event
  
  Create new struct, assign `IEvent` interface
