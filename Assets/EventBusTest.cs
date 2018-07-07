@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using pointcache.EventBus;
+using pEventBus;
 using UnityEngine;
 
 public struct TestEvent : IEvent
@@ -11,8 +11,7 @@ public struct TestEvent : IEvent
 }
 
 public class EventBusTest : MonoBehaviour,
-    IEventReceiver<TestEvent>,
-    IEventReceiver<OnResourceDrop>
+    IEventReceiver<TestEvent>
 {
 
     public int PerFrame = 1000;
@@ -62,8 +61,5 @@ public class EventBusTest : MonoBehaviour,
         //print(e.a);
     }
 
-    public void OnEvent(OnResourceDrop e)
-    {
-        throw new System.NotImplementedException();
-    }
+
 }

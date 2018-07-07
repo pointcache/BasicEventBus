@@ -1,4 +1,4 @@
-﻿namespace pointcache.EventBus
+﻿namespace pEventBus
 {
 
     using System;
@@ -23,14 +23,19 @@
             public BusMap[] buses;
         }
 
+        public static void Initialize()
+        {
+
+        }
+
         static EventBus()
         {
-            var types = Assembly.GetExecutingAssembly().GetTypes();
-
             Dictionary<Type, BusMap> bus_register_map = new Dictionary<Type, BusMap>();
 
             Type delegateType = typeof(Action<>);
             Type delegategenericregister = delegateType.MakeGenericType(typeof(IEventReceiverBase));
+
+            var types = Assembly.GetExecutingAssembly().GetTypes();
 
             foreach (var t in types)
             {
@@ -55,7 +60,7 @@
 
             foreach (var t in types)
             {
-                if (typeof(IEventReceiverBase).IsAssignableFrom(t))
+                if (typeof(IEventReceiverBase).IsAssignableFrom(t) && !t.IsInterface)
                 {
                     Type[] interfaces = t.GetInterfaces().Where(x => x != typeof(IEventReceiverBase) && typeof(IEventReceiverBase).IsAssignableFrom(x)).ToArray();
 

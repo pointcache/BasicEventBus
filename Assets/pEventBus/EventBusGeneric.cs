@@ -1,4 +1,4 @@
-﻿namespace pointcache.EventBus
+﻿namespace pEventBus
 {
     using UnityEngine;
     using System;
