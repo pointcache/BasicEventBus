@@ -1,41 +1,26 @@
 # BasicEventBus
 Basic event bus for unity
 
+ * Simple
  * Structs for events - no garbage
- * Interface based subscription
- * High performance (1mil events risen per frame at 60 fps on my machine)
+ * Binding based or direct subscription, no interfaces
+ * High performance 
 
  # Create an event
  
  Create new struct, assign `IEvent` interface
  
- ```csharp
- 
+ ```cs
+
 public struct TestEvent : IEvent
 {
     public string a;
     public float b;
 
 }
-
-
 ```
 
 # Raising an event
-
-Slower method (has to do lookup to resolve subscribers)
-
-```cs
-
-EventBus.Raise(new TestEvent()
-{
-    b = 7,
-    a = "Hello"
-});
-                
-```
-
-Fast method (directly invoke raise on the generic bus)
 
 ```cs
 
@@ -47,36 +32,61 @@ EventBus<TestEvent>.Raise(new TestEvent()
                 
 ```
 
-# Subscribing
+# Usage
 
-1. Implement desired interfaces on a class
+Check EventBusExample.cs
+
+1. Declare an event binding object
 
 ```cs
 
-
-public class EventBusTest : MonoBehaviour,
-    IEventReceiver<TestEvent>,
-    IEventReceiver<OnResourceDrop>
+public class EventBusTest : MonoBehaviour
 {
+          EventBinding<TestEvent> _onTestEvent;
 
 
 ```
 
-2. Feed instance of it to `EventBus.Register()`
+2. Initialize it in Awake/Start/Ctor
 
 ```cs
 
-    void Start()
-    {
-        EventBus.Register(this);
-    }
+        private void Awake()
+        {
+            _onTestEvent = new EventBinding<TestEvent>(OnEvent);
+            // Add couple more listeners to the same binding   
+            _onTestEvent.Add(onEventButPrintTheStringInstead);
+            _onTestEvent.Add(someUnrelatedMethodWithoutArgs);
 
-    private void OnDestroy()
-    {
-        EventBus.UnRegister(this);
-    }
+            EventBus<TestEvent>.Raise(new TestEvent()
+            {
+                a = "Hello"
+            });
+                                              
+            _onTestEvent.Remove(onEventButPrintTheStringInstead);
+            _onTestEvent.Remove(someUnrelatedMethodWithoutArgs);
 
+            // Callback will be called precisely once, then dropped
+            EventBus<TestEvent>.AddCallback(SomeRandomMethod);
+
+            StartCoroutine(CoroutineThatDispatchesEventAfterSomeTime());
+            StartCoroutine(CoroutineThatWaitsForEvent());
+        }
 ```
 
-It will automatically subscribe everything, reflection is used only once on application start, after that everything is cached and mapped.
+3. Control observing state through `Listen`
+
+```cs
+
+        private void OnEnable()
+        {
+            _onTestEvent.Listen = true;
+        }
+
+        private void OnDisable()
+        {
+            _onTestEvent.Listen = false;
+        }
+```
+
 
