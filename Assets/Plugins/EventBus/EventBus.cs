@@ -5,10 +5,10 @@ namespace EventBus
     using System.Collections.Generic;
     using UnityEngine;
     using EventBus.Internal;
-
+    using System.Collections;
+    
 #if UNITY_EDITOR
     using UnityEditor;
-    using System.Collections;
 #endif
 
     public static class EventBusUtility
