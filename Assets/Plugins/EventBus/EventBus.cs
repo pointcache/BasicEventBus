@@ -6,7 +6,7 @@ namespace EventBus
     using UnityEngine;
     using EventBus.Internal;
     using System.Collections;
-    
+
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
@@ -56,21 +56,27 @@ namespace EventBus
 
             List<Type> eventTypes = new List<Type>();
 
-            for (int i = 0; i < assemblyCSharp.Length; i++)
+            if (assemblyCSharp != null)
             {
-                var type = assemblyCSharp.GetType();
-                if ((typeof(IEvent)) != type && (typeof(IEvent)).IsAssignableFrom(type))
+                for (int i = 0; i < assemblyCSharp.Length; i++)
                 {
-                    eventTypes.Add(type);
+                    var type = assemblyCSharp[i].GetType();
+                    if ((typeof(IEvent)) != type && (typeof(IEvent)).IsAssignableFrom(type))
+                    {
+                        eventTypes.Add(type);
+                    }
                 }
             }
 
-            for (int i = 0; i < assemblyCSharpFirstpass.Length; i++)
+            if (assemblyCSharpFirstpass != null)
             {
-                var type = assemblyCSharpFirstpass.GetType();
-                if ((typeof(IEvent)) != type && (typeof(IEvent)).IsAssignableFrom(type))
+                for (int i = 0; i < assemblyCSharpFirstpass.Length; i++)
                 {
-                    eventTypes.Add(type);
+                    var type = assemblyCSharpFirstpass[i].GetType();
+                    if ((typeof(IEvent)) != type && (typeof(IEvent)).IsAssignableFrom(type))
+                    {
+                        eventTypes.Add(type);
+                    }
                 }
             }
 
@@ -187,9 +193,9 @@ namespace EventBus
                 return;
             }
 
-            if (index == 0)
+            if (index == count - 1)
             {
-                bindings[0] = null;
+                bindings[count - 1] = null;
                 binding.InternalIndex = -1;
                 count--;
                 return;
